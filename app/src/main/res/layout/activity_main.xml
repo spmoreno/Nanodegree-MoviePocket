@@ -9,6 +9,10 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="cl.sebapincheira.android.moviepocket.MainActivity">
 
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar"></include>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
