@@ -1,8 +1,11 @@
 package cl.sebapincheira.android.moviepocket;
 
+import android.animation.Animator;
+import android.graphics.drawable.ColorDrawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
@@ -77,7 +80,14 @@ public class AdapterGrid extends RecyclerView.Adapter<AdapterGrid.ViewHolder> {
                 public void onClick(View v) {
                     Toast.makeText(v.getContext(), "inside viewholder position = " + getAdapterPosition(), Toast.LENGTH_SHORT).show();
 
-                    v.startAnimation(vAnimationAlpha);
+                    //v.startAnimation(vAnimationAlpha);
+
+                    //boolean isVeggie = ((ColorDrawable)v.getBackground()) != null && ((ColorDrawable)v.getBackground()).getColor() == R.color.accent;
+
+                    int finalRadius = (int) Math.hypot(v.getWidth() / 2, v.getHeight() / 2);
+
+                    Animator anim = ViewAnimationUtils.createCircularReveal(v, (int) v.getWidth() / 2, (int) v.getHeight() / 2, 0, finalRadius);
+                    anim.start();
                 }
             });
         }

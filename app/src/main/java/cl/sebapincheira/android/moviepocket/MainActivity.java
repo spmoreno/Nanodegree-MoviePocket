@@ -1,16 +1,24 @@
 package cl.sebapincheira.android.moviepocket;
 
 import android.os.Bundle;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/*
+Tabs + viewpager build using http://www.androidhive.info/2015/09/android-material-design-working-with-tabs/
+ */
 
 public class MainActivity extends AppCompatActivity {
 
@@ -19,43 +27,38 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView vRecyclerView;
     RecyclerView.LayoutManager vLayoutManager;
     CloudFetchMovieList vCloudMovieList;
-    ProgressBar vSpinner;
+    private ProgressBar vProgressBar;
+
     private Toolbar vToolbar_main;
+    private TabLayout vTabLayout;
+    private ViewPager vViewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        vToolbar_main = (Toolbar) findViewById(R.id.main_toolbar); // Attaching the layout to the vToolbar_main object
+        vToolbar_main = (Toolbar) findViewById(R.id.toolbar); // Attaching the layout to the vToolbar_main object
         setSupportActionBar(vToolbar_main); // Setting vToolbar_main as the ActionBar with setSupportActionBar() call
 
-        //Progress bar
-        vSpinner = (ProgressBar) findViewById(R.id.progress_bar_main);
+        vViewPager = (ViewPager) findViewById(R.id.viewpager);
+        setupViewPager(vViewPager);
 
-        // Calling the RecyclerView
-        vRecyclerView = (RecyclerView) findViewById(R.id.recycler_view_main);
-        vRecyclerView.setHasFixedSize(true);
-
-        // The number of Columns
-        vLayoutManager = new GridLayoutManager(this, 2);
-        vRecyclerView.setLayoutManager(vLayoutManager);
-
-
-        //Load MovieList
-        vCloudMovieList = new FetchGrid();
-        vCloudMovieList.getMovieList();
-
-        vAdapterLocal.getItemCount();
-
-        //Set adapter
-        vRecyclerView.setAdapter(vAdapterLocal);
-
-
-        Log.i(LOG_TAG, "Numero items " + vAdapterLocal.getItemCount());// + " // Numero: " + vCloudMovieList.vAdapter.getItemCount());
+        vTabLayout = (TabLayout) findViewById(R.id.tabs);
+        vTabLayout.setupWithViewPager(vViewPager);
 
     }
 
+    private void setupViewPager(ViewPager viewPager) {
+        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        adapter.addFragment(new MostPopularFragment(), "MOST POPULAR");
+        adapter.addFragment(new HighestRatedFragment(), "HIGHEST RATED");
+        /*
+        Adding for app-stage 2
+        adapter.addFragment(new FavouritesFragment(), "FAVOURITES");
+        */
+        viewPager.setAdapter(adapter);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -79,104 +82,33 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    class ViewPagerAdapter extends FragmentPagerAdapter {
+        private final List<Fragment> mFragmentList = new ArrayList<>();
+        private final List<String> mFragmentTitleList = new ArrayList<>();
 
-    public class FetchGrid extends CloudFetchMovieList {
-
-        public FetchGrid() {
-
+        public ViewPagerAdapter(FragmentManager manager) {
+            super(manager);
         }
 
         @Override
-        protected void onPreExecute() {
-            vSpinner.setVisibility(View.VISIBLE);
+        public Fragment getItem(int position) {
+            return mFragmentList.get(position);
         }
 
         @Override
-        protected void onPostExecute(AdapterGrid iResult) {
-
-
-            if (iResult != null) {
-                Log.i(LOG_TAG, "HOLA: " + "Movie list fetch finished! " + iResult.getItemCount());
-
-
-                vAdapterLocal = iResult;
-
-
-                vRecyclerView.setAdapter(vAdapterLocal);
-
-
-                Toast.makeText(getApplicationContext(), "Movie list fetch finished!", Toast.LENGTH_SHORT).show();
-
-
-            } else {
-                Log.i(LOG_TAG, "HOLA: " + "There was a problem fetching movie list");
-                Toast.makeText(getApplicationContext(), "There was a problem fetching movie list", Toast.LENGTH_SHORT).show();
-            }
-
-            vSpinner.setVisibility(View.GONE);
-
+        public int getCount() {
+            return mFragmentList.size();
         }
 
-    }
-
-    /*
-    public static class SpacingDecoration extends RecyclerView.ItemDecoration {
-
-
-
-        //http://stackoverflow.com/questions/30524599/items-are-not-the-same-width-when-using-recyclerview-gridlayoutmanager-to-make-c
-
-        private int mHorizontalSpacing = 5;
-        private int mVerticalSpacing = 5;
-        private boolean isSetMargin = true;
-
-        public SpacingDecoration(int hSpacing, int vSpacing, boolean setMargin) {
-            isSetMargin = setMargin;
-            mHorizontalSpacing = hSpacing;
-            mVerticalSpacing = vSpacing;
+        public void addFragment(Fragment fragment, String title) {
+            mFragmentList.add(fragment);
+            mFragmentTitleList.add(title);
         }
 
         @Override
-        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-            boolean isSetMarginLeftAndRight = this.isSetMargin;
-            int bottomOffset = mVerticalSpacing;
-            int leftOffset = 0;
-            int rightOffset = 0;
-
-            RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) view.getLayoutParams();
-            if (parent.getLayoutManager() instanceof GridLayoutManager) {
-                GridLayoutManager lm = (GridLayoutManager) parent.getLayoutManager();
-                GridLayoutManager.LayoutParams gridLp = (GridLayoutManager.LayoutParams) lp;
-
-                if (gridLp.getSpanSize() == lm.getSpanCount()) {
-                    // Current item is occupied the whole row
-                    // We just need to care about margin left and right now
-                    if (isSetMarginLeftAndRight) {
-                        leftOffset = mHorizontalSpacing;
-                        rightOffset = mHorizontalSpacing;
-                    }
-                } else {
-                    // Current item isn't occupied the whole row
-                    if (gridLp.getSpanIndex() > 0) {
-                        // Set space between items in one row
-                        leftOffset = mHorizontalSpacing;
-                    } else if (gridLp.getSpanIndex() == 0 && isSetMarginLeftAndRight) {
-                        // Set left margin of a row
-                        //leftOffset = mHorizontalSpacing;
-                        leftOffset = 0;
-                    }
-                    if (gridLp.getSpanIndex() == lm.getSpanCount() - gridLp.getSpanSize() && isSetMarginLeftAndRight) {
-                        // Set right margin of a row
-                        rightOffset = 0;
-                        //rightOffset = mHorizontalSpacing;
-                    }
-                }
-            }
-
-            outRect.set(leftOffset, 0, rightOffset, bottomOffset);
+        public CharSequence getPageTitle(int position) {
+            return mFragmentTitleList.get(position);
         }
     }
-*/
-
 
 }
